@@ -1,0 +1,142 @@
+\documentclass{itmo}
+
+\setlist[itemize]{label=---}
+\setlist[enumerate]{label=\arabic*)}
+
+\usepackage{dcolumn}
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+
+
+\begin{document}
+
+\makereporttitle{Программной инженерии и компьютерной техники (ФПИ и КТ)}
+	{лабораторной работе №2}
+	{Хранение и алгоритмы сжатия данных}
+	{Сравнение форматов хранения данных Parquet и ORC}
+	{}
+	{Постнов~С.~А./P4135}
+	{Бабаянц~А.~А.}
+
+\maketableofcontents
+
+\chapter{Теоретическая часть}
+
+\section{Apache Parquet}
+
+\texttt{Apache Parquet}~---~колоночный формат хранения данных, оптимизированный для аналитических запросов.
+Основные особенности:
+\begin{itemize}
+	\item Колоночное хранение данных для эффективного сжатия и быстрого чтения.
+	\item Встроенная схема данных с типами.
+	\item Поддержка вложенных структур данных.
+	\item Оптимизация для больших данных и аналитических запросов.
+	\item Использование алгоритмов сжатия Snappy, Gzip, LZ4.
+\end{itemize}
+
+\section{Apache ORC}
+
+\texttt{Apache ORC} (\textit{Optimized Row Columnar})~---~высокопроизводительный колоночный формат хранения данных.
+Основные особенности:
+\begin{itemize}
+	\item Гибридное хранение (строки и колонки).
+	\item Встроенные индексы для быстрого поиска.
+	\item Агрегированная статистика на уровне полос (stripes).
+	\item Эффективное сжатие с использованием Zlib, Snappy, LZ4.
+	\item Оптимизация для чтения больших объемов данных.
+\end{itemize}
+
+\chapter{Практическая часть}
+
+В лабораторной работе использовались следующие датасеты для сравнения форматов:
+\begin{enumerate}
+	\item \texttt{trade\_data.csv}~---~данные торгов на бирже ($\sim$266~МБ);
+	\item \texttt{market\_orders.csv}~---~данные заказов на маркетплейсе ($\sim$684~МБ);
+	\item \texttt{tweets.csv}~---~данные постов пользователей в социальной сети ($\sim$3.9~ГБ).
+\end{enumerate}
+
+\includelistingpretty
+	{trade_data.csv}
+	{}
+	{Пример данных из файла \texttt{trade\_data.csv}}
+
+\includelistingpretty
+	{market_orders.csv}
+	{}
+	{Пример данных из файла \texttt{market\_orders.csv}}
+	
+\includelistingpretty
+	{tweets.csv}
+	{}
+	{Пример данных из файла \texttt{tweets.csv}}
+	
+\section{Выбранное преобразование данных}
+
+Для сравнения форматов были выполнены следующие операции:
+\begin{enumerate}
+	\item Чтение исходных csv файлов.
+	\item Применение преобразований данных (добавление колонки с суммой длин всех полей).
+	\item Сохранение данных в форматах \texttt{Parquet} и \texttt{ORC}.
+	\item Измерение времени чтения сжатых файлов.
+	\item Вычисление коэффициентов сжатия.
+\end{enumerate}
+
+Все измерения проводились с очисткой кэша \texttt{Spark} для обеспечения точности результатов.
+
+\section{Результаты сравнения}
+
+В таблице \ref{tab:results} представлены результаты сравнения форматов хранения данных.
+\begin{table}[ht!]
+	\centering
+	\caption{Результаты сравнения форматов хранения данных}
+	\label{tab:results}
+	\begin{tabularx}{\textwidth}{|c|X|X|X|X|X|X|}
+	\hline
+	Датасет & Размер csv, МБ & Размер \texttt{Parquet}, МБ & Размер \texttt{ORC}, МБ & Время чтения \texttt{Parquet}~,~с & Время чтения \texttt{ORC}, с \\
+	\hline
+	\texttt{trade\_data} & 265.53 & 56.92 & 45.12 & 0.36 & 0.11 \\
+	\hline
+	\texttt{market\_orders} & 684.14 & 200.70 & 182.68 & 0.08 & 0.05 \\
+	\hline
+	\texttt{tweets} & 3997.58 & 2182.62 & 1439.69 & 0.08 & 0.09 \\
+	\hline
+	\end{tabularx}
+\end{table}
+
+Коэффициенты сжатия для различных форматов представлены в таблице \ref{tab:compression}.
+
+\begin{table}[ht!]
+	\centering
+	\caption{Коэффициенты сжатия}
+	\label{tab:compression}
+	\begin{tabularx}{\textwidth}{|c|X|X|}
+	\hline
+	Датасет & Сжатие \texttt{Parquet} & Сжатие \texttt{ORC} \\
+	\hline
+	\texttt{trade\_data} & 4.7x & 5.9x \\
+	\hline
+	\texttt{market\_orders} & 3.4x & 3.7x \\
+	\hline
+	\texttt{tweets} & 1.8x & 2.8x \\
+	\hline
+	\end{tabularx}
+\end{table}
+
+\clearpage
+На рисунке \ref{img:comparison} представлено сравнение размеров файлов, коэффициентов сжатия и скорости чтения для всех исследуемых датасетов.
+\includeimage
+	{comparison}
+	{f}
+	{H}
+	{\textwidth}
+	{Сравнение форматов хранения данных}
+
+\chapter{Вывод}
+
+По результатам проведенного сравнения можно сделать следующий вывод:
+\begin{enumerate}
+	\item \texttt{ORC} превосходит \texttt{Parquet} по сжатию~---~коэффициент сжатия ORC на $\sim$20~--~30\% выше для большинства датасетов;
+	\item \texttt{ORC} быстрее читается~---~время чтения \texttt{ORC} файлов в $\sim$2~--~4 раза меньше по сравнению с \texttt{Parquet} для большинства случаев;
+	\item оба формата значительно превосходят csv~---~размер файлов уменьшается в $\sim$1.8~--~5.9 раз, а скорость чтения увеличивается в $\sim$5~--~50 раз.
+\end{enumerate}
+
+\end{document}
