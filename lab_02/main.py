@@ -28,9 +28,10 @@ def measure_read_time(spark, file_path, format_type):
     else:
         df = spark.read.csv(file_path, header=True, inferSchema=True)
     
+    count = df.count()
     end_time = time.time()
     
-    return end_time - start_time, df.count()
+    return end_time - start_time, count
 
 
 def apply_transformation(df):
