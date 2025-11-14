@@ -222,3 +222,4 @@ results
 *.toc
 *.zip
 *.out
+*.sqlite

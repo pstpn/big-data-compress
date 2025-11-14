@@ -1,0 +1,71 @@
+\documentclass{itmo}
+
+\setlist[itemize]{label=---}
+\setlist[enumerate]{label=\arabic*)}
+
+\usepackage{dcolumn}
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+
+\begin{document}
+
+\makereporttitle{Программной инженерии и компьютерной техники (ФПИ и КТ)}
+	{лабораторной работе №3}
+	{Хранение и алгоритмы сжатия данных}
+	{Исследование формата хранения данных в СУБД SQLite}
+	{}
+	{Постнов~С.~А./P4135}
+	{Бабаянц~А.~А.}
+
+\maketableofcontents
+
+\chapter{Теоретическая часть}
+
+\section{Формат хранения данных в SQLite}
+
+\texttt{SQLite}~---~реляционная СУБД, хранящая данные в едином файле.
+Основные особенности:
+\begin{enumerate}
+	\item файл состоит из страниц фиксированного размера (512~--~65536 байт);
+	\item заголовок файла (100 байт) содержит метаданные: сигнатуру <<\texttt{SQLite format 3}>>, размер страницы, версию и  кодировку;
+	\item данные организованы в B--деревьях: \texttt{table b-tree} для таблиц (rowid + payload), \texttt{index b-tree} для индексов.
+	\item переменная длина целых чисел (1--9 байт) для сжатия;
+	\item данные строки включают header (varint с размерами колонок) и body (\texttt{NULL}, \texttt{INTEGER}, \texttt{REAL}, \texttt{TEXT}, \texttt{BLOB});
+	\item \texttt{sqlite\_master}~---~системная таблица на странице 1 с метаданными о всех объектах.
+\end{enumerate}
+
+\chapter{Практическая часть}
+
+В лабораторной работе реализованы две программы на \texttt{C} для исследования формата хранения данных в \texttt{SQLite}:
+\begin{enumerate}
+	\item \texttt{sqlite\_writer.c}~---~генератор минимального \texttt{SQLite} файла с таблицей \texttt{mytable(id INTEGER PRIMARY KEY, name TEXT)} и двумя записями;
+	\item \texttt{sqlite\_reader.c}~---~парсер \texttt{SQLite} файла с данными, выводящий содержимое указанной таблицы.
+\end{enumerate}
+
+\section{Реализация программ}
+
+\begin{itemize}
+	\item Чтение/запись заголовка файла и страниц.
+	\item Кодирование/декодирование varint.
+	\item Парсинг record format с поддержкой \texttt{NULL}, \texttt{INTEGER}, \texttt{TEXT}.
+	\item Построение B--дерево страниц для таблиц.
+\end{itemize}
+
+\section{Результат работы}
+
+\includelisting
+	{sqlite3_output.txt}
+	{\texttt{sqlite3 mydb.sqlite "SELECT rowid, name FROM mytable;"}}
+
+\includelisting
+	{my_output.txt}
+	{\texttt{./sqlite\_reader mydb.sqlite mytable}}
+
+\chapter{Вывод}
+
+По результатам исследования можно сделать следующий вывод:
+\begin{enumerate}
+	\item формат хранения данных в \texttt{SQLite} эффективен для хранения структурированных данных с использованием varint и record format для сжатия;
+	\item программы корректно работают и совместимы с \texttt{sqlite3}.
+\end{enumerate}
+
+\end{document}

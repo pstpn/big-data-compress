@@ -1,0 +1,3 @@
+Found table mytable at root page 2
+rowid=1: 'Alice'
+rowid=2: 'Bob'
