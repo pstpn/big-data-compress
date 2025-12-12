@@ -7,51 +7,59 @@ import (
 	"succinct/pkg/tree"
 )
 
-type PrefixTree struct {
-	lbs           FakeBitmap
-	index         map[int]*nodeIndex
-	invertedIndex map[string]int
+// Tree represents a LOUDS (Level-Order Unary Degree Sequence) encoded tree.
+// It uses a bitmap representation for space-efficient tree storage.
+type Tree struct {
+	lbs           FakeBitmap         // Level-order bitmap sequence
+	index         map[int]*nodeIndex // Maps node index to its data
+	invertedIndex map[string]int     // Maps node value to its index (for O(1) lookup)
 }
 
 type nodeIndex struct {
-	value    string
-	children int
+	value    string // Node value
+	children int    // Number of children (cached for performance)
 }
 
-func (p *PrefixTree) FirstChild(parent string) string {
-	parentIndex := p.invertedIndex[parent]
-	if p.index[parentIndex].children < 1 {
+// FirstChild returns the value of the first child of the given parent node.
+// Returns empty string if parent has no children or doesn't exist.
+func (t *Tree) FirstChild(parent string) string {
+	parentIndex := t.invertedIndex[parent]
+	if t.index[parentIndex].children < 1 {
 		return ""
 	}
 
-	return p.index[p.FirstChildIndex(parentIndex)].value
+	return t.index[t.FirstChildIndex(parentIndex)].value
 }
 
-func (p *PrefixTree) FirstChildIndex(parentIndex int) int {
-	return p.lbs.Select(parentIndex+1, 0) - parentIndex
+// FirstChildIndex returns the index of the first child for the given parent index.
+func (t *Tree) FirstChildIndex(parentIndex int) int {
+	return t.lbs.Select(parentIndex+1, 0) - parentIndex
 }
 
-func (p *PrefixTree) LastChild(parent string) string {
-	lastChildIndex := p.LastChildIndex(p.invertedIndex[parent])
+// LastChild returns the value of the last child of the given parent node.
+// Returns empty string if parent has no children or doesn't exist.
+func (t *Tree) LastChild(parent string) string {
+	lastChildIndex := t.LastChildIndex(t.invertedIndex[parent])
 	if lastChildIndex < 0 {
 		return ""
 	}
 
-	return p.index[lastChildIndex].value
+	return t.index[lastChildIndex].value
 }
 
-func (p *PrefixTree) LastChildIndex(parentIndex int) int {
-	lastChildIndex := p.lbs.Select(parentIndex+2, 0) - 1
-	if p.lbs[lastChildIndex] != 1 {
+func (t *Tree) LastChildIndex(parentIndex int) int {
+	lastChildIndex := t.lbs.Select(parentIndex+2, 0) - 1
+	if t.lbs[lastChildIndex] != 1 {
 		return -1
 	}
 
-	return p.lbs.Rank(lastChildIndex-1, 1)
+	return t.lbs.Rank(lastChildIndex-1, 1)
 }
 
-func (p *PrefixTree) ChildrenCount(parent string) int {
-	parentIndex := p.invertedIndex[parent]
-	count := p.LastChildIndex(parentIndex) - p.FirstChildIndex(parentIndex) + 1
+// ChildrenCount returns the number of children for the given parent node.
+func (t *Tree) ChildrenCount(parent string) int {
+	parentIndex := t.invertedIndex[parent]
+	count := t.LastChildIndex(parentIndex) - t.FirstChildIndex(parentIndex) + 1
 	if count < 0 {
 		return 0
 	}
@@ -59,9 +67,11 @@ func (p *PrefixTree) ChildrenCount(parent string) int {
 	return count
 }
 
-func (p *PrefixTree) Parent(child string) string {
-	childIndex := p.invertedIndex[child]
-	parent := p.index[p.lbs.Rank(p.lbs.Select(childIndex+1, 1)-1, 0)-1]
+// Parent returns the value of the parent node for the given child.
+// Returns empty string if child is root or doesn't exist.
+func (t *Tree) Parent(child string) string {
+	childIndex := t.invertedIndex[child]
+	parent := t.index[t.lbs.Rank(t.lbs.Select(childIndex+1, 1)-1, 0)-1]
 	if parent == nil {
 		return ""
 	}
@@ -69,10 +79,21 @@ func (p *PrefixTree) Parent(child string) string {
 	return parent.value
 }
 
-func (p *PrefixTree) Print() {
+// SizeBits returns the total size of the tree in bits.
+func (t *Tree) SizeBits() int {
+	// Size of lbs bitmap
+	s := len(t.lbs)
+	for _, v := range t.index {
+		// (size of int key + size of value)
+		s += (4 + len(v.value)) * 8
+	}
+	return s
+}
+
+func (t *Tree) Print() {
 	fmt.Println()
-	for i := range len(p.index) {
-		v := p.index[i].value
+	for i := range len(t.index) {
+		v := t.index[i].value
 		fmt.Printf("%d) %q\n    |\n    -- "+
 			"parent: %q\n       "+
 			"first child: %q\n       "+
@@ -80,23 +101,24 @@ func (p *PrefixTree) Print() {
 			"children count: %d\n\n",
 			i,
 			v,
-			p.Parent(v),
-			p.FirstChild(v),
-			p.LastChild(v),
-			p.ChildrenCount(v),
+			t.Parent(v),
+			t.FirstChild(v),
+			t.LastChild(v),
+			t.ChildrenCount(v),
 		)
 	}
-	fmt.Println(p.lbs)
+	fmt.Println(t.lbs)
 	fmt.Println()
 }
 
-func FromTree(root *tree.Default) *PrefixTree {
-	pt := &PrefixTree{
+// FromTree converts a regular tree to LOUDS representation.
+func FromTree(root *tree.Node) *Tree {
+	pt := &Tree{
 		lbs:           append(NewBitmap(), []byte{1, 0}...),
 		index:         make(map[int]*nodeIndex),
 		invertedIndex: make(map[string]int),
 	}
-	queue := []*tree.Default{root}
+	queue := []*tree.Node{root}
 
 	currentIndex := 0
 	for len(queue) > 0 {
@@ -117,7 +139,7 @@ func FromTree(root *tree.Default) *PrefixTree {
 	return pt
 }
 
-func generateNodeSeq(node *tree.Default) []byte {
+func generateNodeSeq(node *tree.Node) []byte {
 	seq := &strings.Builder{}
 	for range node.Children() {
 		seq.WriteByte(1)

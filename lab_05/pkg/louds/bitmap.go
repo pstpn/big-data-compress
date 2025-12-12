@@ -1,5 +1,7 @@
 package louds
 
+// FakeBitmap represents a simple uncompressed bitmap implementation.
+// This is a naive O(n) implementation for educational purposes.
 type FakeBitmap []byte
 
 func NewBitmap() FakeBitmap {
