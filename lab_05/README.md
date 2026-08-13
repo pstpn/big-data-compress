@@ -17,7 +17,7 @@ index, so that finding a node does not require a scan.
 ![A tree and its LOUDS encoding](example/graph.svg)
 
 *Figure 1. A tree produced by the generator, laid out level by level, which is the order
-LOUDS encodes it in.*
+LOUDS numbers it in.*
 
 The trade-off is stated plainly by the structure itself. Storage is compact and access is
 sequential, which suits a cache, but navigation has to be computed rather than followed, and
@@ -30,7 +30,7 @@ Both a classical pointer tree and a LOUDS tree are built in Go over sizes from t
 thousand nodes. Memory is measured for each, and four navigation operations are timed, each
 repeated ten thousand times and averaged.
 
-## Memory
+## Results
 
 | Nodes | Pointer tree, bytes | LOUDS, bytes |
 |------:|--------------------:|-------------:|
@@ -39,36 +39,33 @@ repeated ten thousand times and averaged.
 | 1000 | 26059 | 14317 |
 | 10000 | 260344 | 142852 |
 
-![Memory](plots/memory.svg)
+| Operation on 10 000 nodes | Pointer tree, ns | LOUDS, ns |
+|---------------------------|-----------------:|----------:|
+| FirstChild | 28360 | 1543 |
+| Parent | 27782 | 3795 |
+| LastChild | 28152 | 4857 |
+| ChildrenCount | 27737 | 8309 |
 
-*Figure 2. Memory against the number of nodes, both axes logarithmic. The lines run
-parallel, so the saving is a constant fraction rather than something that grows.*
+![Memory and the four navigation operations](plots/louds_vs_pointer.svg)
 
-The saving holds at about 45 per cent across every size, which is what a structure with no
-pointers should give against one that is mostly pointers.
+*Figure 2. Memory and the four operations against the number of nodes, every axis
+logarithmic, pointer tree in violet against LOUDS in green. On each operation the two lines
+cross below a hundred nodes and diverge from there.*
 
-## Navigation
+## What the numbers say
 
-| Nodes | FirstChild, pointer | FirstChild, LOUDS | Parent, pointer | Parent, LOUDS |
-|------:|--------------------:|------------------:|----------------:|--------------:|
-| 10 | 34 | 53 | 38 | 48 |
-| 100 | 294 | 118 | 220 | 130 |
-| 1000 | 1423 | 196 | 1303 | 428 |
-| 10000 | 28360 | 1543 | 27782 | 3795 |
+The same tree fits in about 45 per cent less memory, and the saving holds at that fraction
+across every size, which is what a structure with no pointers should give against one that is
+mostly pointers.
 
-![FirstChild](plots/firstchild.svg)
+On the smallest tree the pointer version is faster, since following a pointer beats scanning
+a bit sequence when there is almost nothing to scan. The curves cross below a hundred nodes,
+and by ten thousand LOUDS leads on all four operations, by 18.4 times on `FirstChild`, 7.3 on
+`Parent`, 5.8 on `LastChild` and 3.3 on `ChildrenCount`.
 
-*Figure 3. FirstChild against the number of nodes. The pointer tree starts ahead, the lines
-cross below a hundred nodes, and from there they diverge.*
-
-On the smallest tree the pointer version is ahead, since following a pointer beats scanning
-a bit sequence when there is almost nothing to scan. The curves cross before a hundred nodes
-and diverge from there. At ten thousand nodes LOUDS leads on all four operations, by 18.4
-times on `FirstChild`, 7.3 on `Parent`, 5.8 on `LastChild` and 3.3 on `ChildrenCount`.
-
-The reason is not the asymptotics, which favour the pointer tree if anything, but the
-memory. A compact bit array is read sequentially and stays in cache, while a pointer tree
-of ten thousand nodes scatters them across the heap and pays a miss at every step.
+The reason is not the asymptotics, which favour the pointer tree if anything, but the memory.
+A compact bit array is read sequentially and stays in cache, while a pointer tree of ten
+thousand nodes scatters them across the heap and pays a miss at every step.
 
 ## Running
 

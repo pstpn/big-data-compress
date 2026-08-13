@@ -23,22 +23,17 @@ it.
 | market_orders | 684.14 | 200.70 | 182.68 | 0.11 | 0.05 |
 | tweets | 3997.58 | 2182.62 | 1439.69 | 0.10 | 0.05 |
 
-![File size by format](plots/size.svg)
-
-*Figure 1. The same three datasets on a logarithmic scale. Both columnar formats sit far
-below csv, and ORC below Parquet on every dataset.*
-
 | Dataset | Parquet | ORC |
 |---------|--------:|----:|
 | trade_data | 4.7x | 5.9x |
 | market_orders | 3.4x | 3.7x |
 | tweets | 1.8x | 2.8x |
 
-![Read time](plots/read.svg)
+![Summary of the four measurements](plots/summary.svg)
 
-*Figure 2. Reading the compressed files back. csv is left out of the figure because the
-report gives its read time as a range of 1.84 to 5.05 seconds rather than per dataset, which
-is an order of magnitude above everything plotted here.*
+*Figure 1. File size, compression ratio, read time and read speedup across the three
+datasets. csv is the tall bar in the size and read-time panels and the baseline of one in
+the ratio and speedup panels.*
 
 ## What the numbers say
 
@@ -51,6 +46,27 @@ The ordering across datasets is the more interesting part. Compression is best o
 and worst on the tweets, because a column of numbers repeats its patterns and a column of
 free text does not, so a columnar encoder has far less to exploit. A format cannot compress
 structure that the data never had.
+
+## Per-codec breakdown
+
+The summary above lets each format pick its own default. A deeper run pins that down,
+comparing every codec the two formats offer, Parquet with Snappy, Gzip, LZ4 and Zstd and ORC
+with Snappy, Zlib, LZ4 and Zstd, on trade_data, market_orders and a payments dataset.
+
+![File size by codec](plots/codecs_1.svg)
+
+*Figure 2. File size for every codec. The uncompressed columnar files already sit well below
+csv, and the general-purpose codecs close most of the remaining gap.*
+
+![Compression rate by codec](plots/codecs_2.svg)
+
+*Figure 3. Compression rate relative to csv. ORC with Zstd and Zlib reaches the top of the
+range on the payments dataset, past fifteen times.*
+
+![Read time by codec](plots/codecs_3.svg)
+
+*Figure 4. Read time by codec. Every columnar variant collapses to a fraction of a second
+against the several seconds csv takes, and the choice of codec barely moves it.*
 
 ## Running
 

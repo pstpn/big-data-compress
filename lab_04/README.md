@@ -23,16 +23,10 @@ the ratio and both timings recorded and written to csv for plotting.
 | pdf | 1.00 | 1.04 | 1420.73 | 151.27 | 764.23 | 114.90 |
 | zip | 1.00 | 1.00 | 275.35 | 25.00 | 147.68 | 22.00 |
 
-![Compression ratio](plots/ratio.svg)
+![Compression ratio, encoding time and decoding time](plots/huffman_vs_zlib.svg)
 
-*Figure 1. Compression ratio by file type. A ratio of one means the output is the same size
-as the input.*
-
-![Compression time](plots/time.svg)
-
-*Figure 2. Compression time on a logarithmic scale. The distance between the two methods is
-roughly constant across file types, which says the gap is in the implementation and not in
-the data.*
+*Figure 1. Compression ratio, encoding time and decoding time by file type, Huffman in red
+against zlib in green. A ratio of one means the output is the same size as the input.*
 
 ## What the numbers say
 
