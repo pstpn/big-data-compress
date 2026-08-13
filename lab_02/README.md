@@ -23,11 +23,22 @@ it.
 | market_orders | 684.14 | 200.70 | 182.68 | 0.11 | 0.05 |
 | tweets | 3997.58 | 2182.62 | 1439.69 | 0.10 | 0.05 |
 
+![File size by format](plots/size.svg)
+
+*Figure 1. The same three datasets on a logarithmic scale. Both columnar formats sit far
+below csv, and ORC below Parquet on every dataset.*
+
 | Dataset | Parquet | ORC |
 |---------|--------:|----:|
 | trade_data | 4.7x | 5.9x |
 | market_orders | 3.4x | 3.7x |
 | tweets | 1.8x | 2.8x |
+
+![Read time](plots/read.svg)
+
+*Figure 2. Reading the compressed files back. csv is left out of the figure because the
+report gives its read time as a range of 1.84 to 5.05 seconds rather than per dataset, which
+is an order of magnitude above everything plotted here.*
 
 ## What the numbers say
 

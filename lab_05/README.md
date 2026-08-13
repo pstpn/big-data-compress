@@ -14,6 +14,11 @@ occurrences of a bit before a position and `Select(n, bit)` finding the position
 n-th occurrence. The implementation here keeps an inverted index from a node's value to its
 index, so that finding a node does not require a scan.
 
+![A tree and its LOUDS encoding](example/graph.svg)
+
+*Figure 1. A tree produced by the generator, laid out level by level, which is the order
+LOUDS encodes it in.*
+
 The trade-off is stated plainly by the structure itself. Storage is compact and access is
 sequential, which suits a cache, but navigation has to be computed rather than followed, and
 a naive `Rank` and `Select` are linear where an optimised implementation reaches constant
@@ -34,6 +39,11 @@ repeated ten thousand times and averaged.
 | 1000 | 26059 | 14317 |
 | 10000 | 260344 | 142852 |
 
+![Memory](plots/memory.svg)
+
+*Figure 2. Memory against the number of nodes, both axes logarithmic. The lines run
+parallel, so the saving is a constant fraction rather than something that grows.*
+
 The saving holds at about 45 per cent across every size, which is what a structure with no
 pointers should give against one that is mostly pointers.
 
@@ -45,6 +55,11 @@ pointers should give against one that is mostly pointers.
 | 100 | 294 | 118 | 220 | 130 |
 | 1000 | 1423 | 196 | 1303 | 428 |
 | 10000 | 28360 | 1543 | 27782 | 3795 |
+
+![FirstChild](plots/firstchild.svg)
+
+*Figure 3. FirstChild against the number of nodes. The pointer tree starts ahead, the lines
+cross below a hundred nodes, and from there they diverge.*
 
 On the smallest tree the pointer version is ahead, since following a pointer beats scanning
 a bit sequence when there is almost nothing to scan. The curves cross before a hundred nodes
